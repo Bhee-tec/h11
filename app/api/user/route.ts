@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
         points: 0,              // Initialize points to 0
         flxPoints: 0,           // Initialize flxPoints to 0
         currentMoves: 30,       // Set initial moves
+        referralCode: uuidv4(), // Generate unique referral code
       },
     })
 
