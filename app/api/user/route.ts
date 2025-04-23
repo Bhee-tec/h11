@@ -1,32 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
-import  prisma  from '@/lib/prisma'
+import prisma from '@/lib/prisma'
+
+interface TelegramUser {
+  id: number
+  username?: string
+  first_name?: string
+  last_name?: string
+}
 
 export async function POST(req: NextRequest) {
-    try {
-        const userData = await req.json()
+  try {
+    const userData: TelegramUser = await req.json()
 
-        if (!userData || !userData.id) {
-            return NextResponse.json({ error: 'Invalid user data' }, { status: 400 })
-        }
-
-        let user = await prisma.user.findUnique({
-            where: { telegramId: userData.id }
-        })
-
-        if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    telegramId: userData.id,
-                    username: userData.username || '',
-                    firstName: userData.first_name || '',
-                    lastName: userData.last_name || ''
-                }
-            })
-        }
-
-        return NextResponse.json(user)
-    } catch (error) {
-        console.error('Error processing user data:', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    // Validate user data
+    if (!userData?.id || typeof userData.id !== 'number') {
+      return NextResponse.json({ error: 'Invalid Telegram user ID' }, { status: 400 })
     }
+
+    // Upsert user (create or update if exists)
+    const user = await prisma.user.upsert({
+      where: { telegramId: userData.id },
+      update: {},  // No updates needed if user already exists
+      create: {
+        telegramId: userData.id,
+        username: userData.username?.trim() || null,
+        firstName: userData.first_name?.trim() || null,
+        lastName: userData.last_name?.trim() || null,
+        points: 0,              // Initialize points to 0
+        flxPoints: 0,           // Initialize flxPoints to 0
+        currentMoves: 30,       // Set initial moves
+      },
+    })
+
+    return NextResponse.json(user, { status: 200 })
+
+  } catch (error) {
+    console.error('User creation error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } finally {
+    await prisma.$disconnect()
+  }
 }
