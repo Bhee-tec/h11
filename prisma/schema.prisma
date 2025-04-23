@@ -1,0 +1,61 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String          @id @default(auto()) @map("_id") @db.ObjectId
+  telegramId   Int             @unique
+  username     String?
+  firstName    String?
+  lastName     String?
+  points       Int             @default(0)
+  flxPoints    Int             @default(0)
+  currentMoves Int             @default(30)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  completions  TaskCompletion[]
+  referralCode  String    @unique
+  referrals     Referral[]
+  referralCount Int       @default(0)
+  referralEarnings Int      @default(0)  // Store in cents
+  @@index([points])
+  @@index([flxPoints])
+  Referral Referral[] @relation(name: "Referee")
+}
+
+model Referral {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  referrer    User     @relation(fields: [referrerId], references: [id])
+  referee     User     @relation(fields: [refereeId], references: [id], name: "Referee")
+  referrerId  String   @db.ObjectId
+  refereeId   String   @unique @db.ObjectId
+  earnings    Int      // Store in cents/minor currency units
+  createdAt   DateTime @default(now())
+}
+
+model Task {
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  link        String
+  points      Int
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  completions TaskCompletion[]
+}
+
+model TaskCompletion {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @db.ObjectId
+  task      Task     @relation(fields: [taskId], references: [id])
+  taskId    String   @db.ObjectId
+  completed Boolean  @default(false)
+  claimed   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
