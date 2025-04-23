@@ -19,23 +19,6 @@ model User {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   completions  TaskCompletion[]
-  referralCode  String    @unique
-  referrals     Referral[]
-  referralCount Int       @default(0)
-  referralEarnings Int      @default(0)  // Store in cents
-  @@index([points])
-  @@index([flxPoints])
-  Referral Referral[] @relation(name: "Referee")
-}
-
-model Referral {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  referrer    User     @relation(fields: [referrerId], references: [id])
-  referee     User     @relation(fields: [refereeId], references: [id], name: "Referee")
-  referrerId  String   @db.ObjectId
-  refereeId   String   @unique @db.ObjectId
-  earnings    Int      // Store in cents/minor currency units
-  createdAt   DateTime @default(now())
 }
 
 model Task {
